@@ -3,21 +3,25 @@ module Lib
     , dayToDayNum
     , dayNumToDay
     , parseDateStr
+    , Day -- Re-export from Data.Time
+    , DayNum
     ) where
 
 import Control.Monad ( msum )
 import Data.Time
 
+type DayNum = Integer
+
 cwEpoch :: Day
 cwEpoch = fromGregorian 1999 12 31
 
-dayNumToDay :: Integer -> Day
+dayNumToDay :: DayNum -> Day
 dayNumToDay dayNum = addDays dayNum cwEpoch
 
-dayToDayNum :: Day -> Integer
+dayToDayNum :: Day -> DayNum
 dayToDayNum day = diffDays day cwEpoch
 
-dayNumOrDayToString :: Either Integer Day -> String
+dayNumOrDayToString :: Either DayNum Day -> String
 dayNumOrDayToString (Left daynum) = showGregorian $ dayNumToDay daynum
 dayNumOrDayToString (Right day)   = show $ dayToDayNum day
 
