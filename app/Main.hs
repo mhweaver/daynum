@@ -11,22 +11,29 @@ import Data.Maybe         ( fromMaybe )
 import Data.Time          ( Day 
                           , parseTimeM
                           , defaultTimeLocale )
+import System.IO          ( hPutStrLn
+                          , stderr )
 
 main :: IO ()
 main = do
     args <- getArgs
-    let dayNumOrDay = parseArgs args
-        out = dayNumOrDayToString dayNumOrDay
-    putStrLn out
+    let wrappedDayNumOrDay = parseArgs args
+    case wrappedDayNumOrDay of
+        Left e -> hPutStrLn stderr e
+        Right dayNumOrDay -> putStrLn . dayNumOrDayToString $ dayNumOrDay
 
 usage = "usage: daynum [day num | date string]"
 
-parseArgs :: [String] -> Either Integer Day
-parseArgs (arg:[]) = fromMaybe (error usage) $ parseArg arg
-parseArgs _        = error usage
+parseArgs :: [String] -> Either String (Either Integer Day)
+parseArgs [arg] = do
+    let parsed = parseArg arg
+    case parsed of
+        Nothing -> Left $ "Unable to parse argument: " ++ arg ++ "\n" ++ usage
+        Just p  -> Right p
+parseArgs _     = Left usage
 
 parseArg :: String -> Maybe (Either Integer Day)
-parseArg arg = fmap Left (readMaybe arg ) -- :: Maybe Integer)
+parseArg arg = fmap Left (readMaybe arg) -- :: Maybe Integer
                `mplus` fmap Right (parseDateStr arg)
     
 parseDateStr :: String -> Maybe Day
