@@ -34,6 +34,7 @@ test-suite daynum-test
   main-is:             Spec.hs
   build-depends:       base
                      , daynum
+                     , HUnit >= 1.3.1.2
                      , QuickCheck
                      , time >= 1.6.0.1
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
