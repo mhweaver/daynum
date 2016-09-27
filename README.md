@@ -1,7 +1,7 @@
 # daynum
 
 ```
-Convert to/from dates and number of days elapsed since 1999-12-13
+Convert to/from dates and number of days elapsed since 1999-12-31
 
 Usage:
   daynum daynumber
