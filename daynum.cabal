@@ -42,4 +42,4 @@ test-suite daynum-test
 
 source-repository head
   type:     git
-  location: https://github.com/githubuser/daynum
+  location: https://github.com/mhweaver/daynum
