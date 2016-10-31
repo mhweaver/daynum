@@ -6,8 +6,9 @@ module Lib
     , dateNumToDate
     ) where
 
+import Text.ParserCombinators.Parsec hiding ((<|>))
+import Control.Applicative
 import Data.Time
-import Text.ParserCombinators.Parsec
 
 type DateNum = Integer
 type Date = Day
@@ -24,7 +25,7 @@ dateToDateNum date = diffDays date cwEpoch
 
 dateNumOrDateToString :: DateNumOrDate -> String
 dateNumOrDateToString (DateNum datenum) = showGregorian $ dateNumToDate datenum
-dateNumOrDateToString (Date date)      = show $ dateToDateNum date
+dateNumOrDateToString (Date date)       = show          $ dateToDateNum date
 
 parseInput :: String -> Maybe DateNumOrDate
 parseInput inp = case parse datenumOrDate "" inp of
@@ -35,61 +36,25 @@ parseInput inp = case parse datenumOrDate "" inp of
  -
  - Grammar for valid inputs (along with parser types):
  -
- - datenumOrDate :: DateNumOrDate = datenum | date
- - datenum       :: Integer       = digit+ eof
- - date          :: Date          = mdy | ymd
- - mdy           :: Date          = monthday sep year     eof
- - ymd           :: Date          = year     sep monthday eof
- - year          :: Integer       = digit digit digit digit | digit digit
- - monthday      :: (Int, Int)    = shortint sep shortint
- - shortint      :: Int           = digit digit | digit
- - sep           :: ()            = [ /-]+
+ - datenumOrDate = datenum | date                        :: DateNumOrDate
+ - datenum       = digit+ eof                            :: Integer
+ - date          = mdy | ymd                             :: Date
+ - mdy           = month sep day   sep year eof          :: Date
+ - ymd           = year  sep month sep day  eof          :: Date
+ - month         = shortint                              :: Int
+ - day           = shortint                              :: Int
+ - year          = digit digit digit digit | digit digit :: Integer
+ - shortint      = digit digit | digit                   :: Int
+ - sep           = [ /-]+                                :: ()
  -}
-datenumOrDate :: Parser DateNumOrDate
-datenumOrDate = choice [ try $ do{ date <- date;  return $ Date date  }
-                      ,       do{ num <- datenum; return $ DateNum num } ]
-datenum :: Parser Integer
-datenum = do
-    raw <- many1 digit
-    eof
-    return $ read raw
-date :: Parser Date
-date = try mdy
-       <|> ymd
-ymd :: Parser Date
-ymd = do
-    y <- year
-    sep
-    (m, d) <- monthday
-    eof
-    return $ fromGregorian y m d
-mdy :: Parser Date
-mdy = do
-    (m, d) <- monthday
-    sep
-    y <- year
-    eof
-    return $ fromGregorian y m d
-year :: Parser Integer
-year = do
-    let year2 = do
-                y <- count 2 digit
-                return $ "20" ++ y
-        year4 = count 4 digit
-    y <- try year4
-         <|> year2
-    return $ read y
-monthday :: Parser (Int, Int) -- (month, day)
-monthday = do
-    m <- shortint
-    sep
-    d <- shortint
-    return (m, d)
-shortint :: Parser Int
-shortint = do
-    i <- try $ count 2 digit
-         <|>   count 1 digit
-    return $ read i
-sep :: Parser ()
-sep = skipMany1 $ oneOf " /-"
+datenumOrDate = try (Date <$> date) <|> DateNum <$> datenum                    :: Parser DateNumOrDate
+datenum       = read <$> many1 digit <* eof                                    :: Parser Integer
+date          = try mdy <|> ymd                                                :: Parser Date
+mdy           = (\m d y -> fromGregorian y m d) <$> month <* sep <*> day   <* sep <*> year <* eof :: Parser Date
+ymd           = fromGregorian                   <$> year  <* sep <*> month <* sep <*> day  <* eof :: Parser Date
+month         = shortint                                                       :: Parser Int
+day           = shortint                                                       :: Parser Int
+year          = read <$> (try (count 4 digit) <|> ("20" ++) <$> count 2 digit) :: Parser Integer
+shortint      = read <$> (try (count 2 digit) <|> count 1 digit)               :: Parser Int
+sep           = skipMany1 $ oneOf " /-"                                        :: Parser ()
 
