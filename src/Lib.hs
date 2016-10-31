@@ -37,7 +37,7 @@ parseInput inp = case parse datenumOrDate "" inp of
  - Grammar for valid inputs (along with parser types):
  -
  - datenumOrDate = datenum | date                        :: DateNumOrDate
- - datenum       = digit+ eof                            :: Integer
+ - datenum       = -? digit+ eof                         :: Integer
  - date          = mdy | ymd                             :: Date
  - mdy           = month sep day   sep year eof          :: Date
  - ymd           = year  sep month sep day  eof          :: Date
@@ -48,7 +48,7 @@ parseInput inp = case parse datenumOrDate "" inp of
  - sep           = [ /-]+                                :: ()
  -}
 datenumOrDate = try (Date <$> date) <|> DateNum <$> datenum                    :: Parser DateNumOrDate
-datenum       = read <$> many1 digit <* eof                                    :: Parser Integer
+datenum       = read <$> ((++) <$> option "" (string "-") <*> many1 digit)     :: Parser Integer
 date          = try mdy <|> ymd                                                :: Parser Date
 mdy           = (\m d y -> fromGregorian y m d) <$> month <* sep <*> day   <* sep <*> year <* eof :: Parser Date
 ymd           = fromGregorian                   <$> year  <* sep <*> month <* sep <*> day  <* eof :: Parser Date
