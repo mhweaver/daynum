@@ -1,55 +1,69 @@
 module Lib
-    ( dayNumOrDayToString
-    , dayToDayNum
-    , dayNumToDay
-    , parseDateStr
-    , Day -- Re-export from Data.Time
-    , DayNum
+    ( parseInput
+    , DateNumOrDate
+    , dateNumOrDateToString
+    , dateToDateNum
+    , dateNumToDate
     ) where
 
-import Control.Monad ( msum )
 import Data.Time
 import Text.ParserCombinators.Parsec
 
-type DayNum = Integer
+type DateNum = Integer
+type Date = Day
+data DateNumOrDate = DateNum DateNum | Date Date
 
-cwEpoch :: Day
+cwEpoch :: Date
 cwEpoch = fromGregorian 1999 12 31
 
-dayNumToDay :: DayNum -> Day
-dayNumToDay dayNum = addDays dayNum cwEpoch
+dateNumToDate :: DateNum -> Date
+dateNumToDate dateNum = addDays dateNum cwEpoch
 
-dayToDayNum :: Day -> DayNum
-dayToDayNum day = diffDays day cwEpoch
+dateToDateNum :: Date -> DateNum
+dateToDateNum date = diffDays date cwEpoch
 
-dayNumOrDayToString :: Either DayNum Day -> String
-dayNumOrDayToString (Left daynum) = showGregorian $ dayNumToDay daynum
-dayNumOrDayToString (Right day)   = show $ dayToDayNum day
+dateNumOrDateToString :: DateNumOrDate -> String
+dateNumOrDateToString (DateNum datenum) = showGregorian $ dateNumToDate datenum
+dateNumOrDateToString (Date date)      = show $ dateToDateNum date
 
-parseDateStr :: String -> Maybe Day
-parseDateStr s = case parse date "" s of
+parseInput :: String -> Maybe DateNumOrDate
+parseInput inp = case parse datenumOrDate "" inp of
                     Left error -> Nothing
-                    Right day  -> Just day
+                    Right parsed -> Just parsed
 
-{- date     :: Day        -> mdy | ymd
- - mdy      :: Day        -> monthday sep year     eof
- - ymd      :: Day        -> year     sep monthday eof
- - year     :: Integer    -> digit digit digit digit | digit digit
- - monthday :: (Int, Int) -> shortint sep shortint
- - shortint :: Int        -> digit digit | digit
- - sep      :: ()         -> [ /-]+
+{- Parsers
+ -
+ - Grammar for valid inputs (along with parser types):
+ -
+ - datenumOrDate :: DateNumOrDate = datenum | date
+ - datenum       :: Integer       = digit+ eof
+ - date          :: Date          = mdy | ymd
+ - mdy           :: Date          = monthday sep year     eof
+ - ymd           :: Date          = year     sep monthday eof
+ - year          :: Integer       = digit digit digit digit | digit digit
+ - monthday      :: (Int, Int)    = shortint sep shortint
+ - shortint      :: Int           = digit digit | digit
+ - sep           :: ()            = [ /-]+
  -}
-date :: Parser Day
+datenumOrDate :: Parser DateNumOrDate
+datenumOrDate = choice [ try $ do{ date <- date;  return $ Date date  }
+                      ,       do{ num <- datenum; return $ DateNum num } ]
+datenum :: Parser Integer
+datenum = do
+    raw <- many digit
+    eof
+    return $ read raw
+date :: Parser Date
 date = try mdy
        <|> ymd
-ymd :: Parser Day
+ymd :: Parser Date
 ymd = do
     y <- year
     sep
     (m, d) <- monthday
     eof
     return $ fromGregorian y m d
-mdy :: Parser Day
+mdy :: Parser Date
 mdy = do
     (m, d) <- monthday
     sep
