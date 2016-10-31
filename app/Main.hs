@@ -11,7 +11,7 @@ import System.IO          ( hPutStrLn
 main :: IO ()
 main = do
     args <- getArgs
-    let inp = parseInput $ args !! 0 :: Maybe DateNumOrDate
+    let inp = parseInput $ unwords args:: Maybe DateNumOrDate
     case inp of
         Nothing -> hPutStrLn stderr "usage: daynum [ dddd | yyyy-mm-dd ]"
         Just dateNumOrDate -> putStrLn . dateNumOrDateToString $ dateNumOrDate
