@@ -50,7 +50,7 @@ datenumOrDate = choice [ try $ do{ date <- date;  return $ Date date  }
                       ,       do{ num <- datenum; return $ DateNum num } ]
 datenum :: Parser Integer
 datenum = do
-    raw <- many digit
+    raw <- many1 digit
     eof
     return $ read raw
 date :: Parser Date
