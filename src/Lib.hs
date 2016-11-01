@@ -38,23 +38,23 @@ parseInput inp = case parse datenumOrDate "" inp of
  -
  - datenumOrDate = datenum | date                        :: DateNumOrDate
  - datenum       = -? digit+ eof                         :: Integer
- - date          = mdy | ymd                             :: Date
+ - date          = mdy | ymd                             :: Date (mdy before ymd, in order to make 01-01-01 be mdy)
  - mdy           = month sep day   sep year eof          :: Date
  - ymd           = year  sep month sep day  eof          :: Date
  - month         = shortint                              :: Int
  - day           = shortint                              :: Int
- - year          = digit digit digit digit | digit digit :: Integer
+ - year          = digit digit digit digit | digit digit :: Integer (Integer because that's what fromGregorian requires)
  - shortint      = digit digit | digit                   :: Int
  - sep           = [ /-]+                                :: ()
  -}
-datenumOrDate = try (Date <$> date) <|> DateNum <$> datenum                    :: Parser DateNumOrDate
-datenum       = read <$> ((++) <$> option "" (string "-") <*> many1 digit)     :: Parser Integer
-date          = try mdy <|> ymd                                                :: Parser Date
+datenumOrDate = try (DateNum <$> datenum) <|> (Date <$> date)                     :: Parser DateNumOrDate
+datenum       = read <$> ((++) <$> option "" (string "-") <*> many1 digit) <* eof :: Parser Integer
+date          = try mdy <|> ymd                                                   :: Parser Date
 mdy           = (\m d y -> fromGregorian y m d) <$> month <* sep <*> day   <* sep <*> year <* eof :: Parser Date
 ymd           = fromGregorian                   <$> year  <* sep <*> month <* sep <*> day  <* eof :: Parser Date
-month         = shortint                                                       :: Parser Int
-day           = shortint                                                       :: Parser Int
-year          = read <$> (try (count 4 digit) <|> ("20" ++) <$> count 2 digit) :: Parser Integer
-shortint      = read <$> (try (count 2 digit) <|> count 1 digit)               :: Parser Int
-sep           = skipMany1 $ oneOf " /-"                                        :: Parser ()
+month         = shortint                                                          :: Parser Int
+day           = shortint                                                          :: Parser Int
+year          = read <$> (try (count 4 digit) <|> ("20" ++) <$> count 2 digit)    :: Parser Integer
+shortint      = read <$> (try (count 2 digit) <|> count 1 digit)                  :: Parser Int
+sep           = skipMany1 $ oneOf " /-"                                           :: Parser ()
 
